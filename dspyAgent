@@ -1,0 +1,41 @@
+import dspy
+import os
+import openai
+import dotenv
+
+import langchainPractice as lp
+
+dotenv.load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+lm = dspy.LM(
+    model = "gpt-4",
+    api_key = openai.api_key
+)
+
+dspy.configure(lm=lm)
+
+class summarizer(dspy.Signature):
+    """summarize search results to answer a users query"""
+    user_query: str = dspy.InputField()
+    search_results = dspy.InputField()
+    summary: str = dspy.OutputField()
+    sources: str = dspy.OutputField()
+
+predict = dspy.ReAct(
+    signature=summarizer,
+    tools = []
+)
+
+
+def get_results(query):
+
+    result = predict(
+        user_query=query,
+        search_results=lp.search_chroma(query)
+    )
+    return result
+
+result = get_results("how many players can play monopoly")
+print(f"Answer: {result.summary}\n\nSources: {result.sources}")
